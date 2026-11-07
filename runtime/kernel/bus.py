@@ -39,7 +39,12 @@ class EventBus:
         return True
 
     def publish(self, event: str, payload: Any = None, publisher: str = "") -> int:
-        handlers = list(self._handlers.get(event, {}).items())
+        # 快照化：订阅者可能在回调里 subscribe/unsubscribe，直接迭代 dict 会报
+        # "dictionary changed size during iteration"。先取快照既安全又避免不一致。
+        bucket = self._handlers.get(event)
+        if not bucket:
+            return 0
+        handlers = list(bucket.items())
         for _token, handler in handlers:
             try:
                 handler(event, payload)

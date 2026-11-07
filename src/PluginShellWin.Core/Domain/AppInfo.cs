@@ -4,7 +4,7 @@ namespace PluginShellWin.Core.Domain;
 public static class AppInfo
 {
     public const string Name = "PluginShellWin";
-    public const string Version = "1.0.0";
+    public const string Version = "1.1.0";
     public const string Protocol = "1.0";
     public const string Company = "ml-308";
     public const string Description = "C# native host for PluginShell plugins (no Web technology)";

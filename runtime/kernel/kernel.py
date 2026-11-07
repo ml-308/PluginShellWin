@@ -9,6 +9,7 @@ import json
 import shutil
 import sys
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -57,8 +58,9 @@ class Kernel:
         self.project_root = (Path(project_root) if project_root else self.plugins_dir.parent).resolve()
         self.state_path = Path(state_path).resolve() if state_path else None
 
-        # 日志句柄必须先就绪，后面的失败分支才可能记日志
-        self.logs: list[str] = []
+        # 日志句柄必须先就绪，后面的失败分支才可能记日志。
+        # 用 deque(maxlen) 替代 list + pop(0)：把尾部裁剪从 O(n) 降到 O(1)。
+        self.logs: deque[str] = deque(maxlen=500)
         self._log_sink = log_sink
 
         # 安装目录可能是只读的（管理员装到 Program Files、普通账户运行）。
@@ -80,14 +82,18 @@ class Kernel:
         self._observers: dict[str, Callable[[], None]] = {}
         self._observer_seq = 0
 
+        # 缓存与通知去抖（性能优化，不影响对外语义）
+        self._categories_cache: tuple[tuple[Category, ...], tuple[Category, ...]] | None = None
+        self._categories_key: tuple | None = None
+        self._notify_pending = False
+        self._manifest_cache: dict[str, tuple[float, Manifest]] = {}
+
     # ==================================================================
     # 日志与观察者
     # ==================================================================
     def _log(self, message: str) -> None:
         line = f"[{time.strftime('%H:%M:%S')}] {message}"
-        self.logs.append(line)
-        if len(self.logs) > 500:
-            self.logs.pop(0)
+        self.logs.append(line)  # deque(maxlen=500) 自动裁剪，O(1)
         if self._log_sink:
             try:
                 self._log_sink(line)
@@ -104,33 +110,72 @@ class Kernel:
         return self._observers.pop(token, None) is not None
 
     def _notify(self) -> None:
-        for callback in list(self._observers.values()):
-            try:
-                callback()
-            except Exception as exc:  # noqa: BLE001
-                self._log(f"内核观察者异常: {exc!r}（已隔离）")
+        """通知观察者，带去抖：同一同步调用链里的多次变更只触发一次重绘。
+
+        （例如 install() 内部先 discover 再 enable，各触发一次 _notify，现在合并成一次。）
+        """
+        if self._notify_pending:
+            return
+        self._notify_pending = True
+        try:
+            for callback in list(self._observers.values()):
+                try:
+                    callback()
+                except Exception as exc:  # noqa: BLE001
+                    self._log(f"内核观察者异常: {exc!r}（已隔离）")
+        finally:
+            self._notify_pending = False
+
+    def _invalidate_caches(self) -> None:
+        self._categories_cache = None
+        self._categories_key = None
 
     # ==================================================================
     # 发现 / 启动
     # ==================================================================
     def discover(self) -> dict[str, Manifest]:
-        """扫描 plugins/，读取全部清单。单个清单损坏只跳过该插件。"""
+        """扫描 plugins/，读取全部清单。单个清单损坏只跳过该插件。
+
+        增量优化：以「目录名 + manifest 修改时间」为键缓存清单，未变化的插件
+        不重新解析磁盘 JSON，避免每次 enable/disable/uninstall 全量重读。
+        """
         found: dict[str, Manifest] = {}
         if self.plugins_dir.is_dir():
             for child in sorted(self.plugins_dir.iterdir()):
                 if not child.is_dir() or child.name.startswith("."):
                     continue
-                if not (child / "manifest.json").is_file():
+                manifest_file = child / "manifest.json"
+                if not manifest_file.is_file():
                     continue
+                try:
+                    mtime = manifest_file.stat().st_mtime
+                except OSError:
+                    mtime = 0.0
+
+                cached = self._manifest_cache.get(child.name)
+                if cached is not None and cached[0] == mtime:
+                    found[cached[1].id] = cached[1]
+                    continue
+
                 try:
                     manifest = load_manifest(child)
                 except ManifestError as exc:
                     self._log(f"跳过清单非法的插件目录 {child.name}: {exc}")
                     continue
+                self._manifest_cache[child.name] = (mtime, manifest)
                 if manifest.id in found:
                     self._log(f"插件 ID 冲突，忽略 {child.name}: {manifest.id}")
                     continue
                 found[manifest.id] = manifest
+
+        # 清掉已不在磁盘上的缓存项
+        live_names: set[str] = set()
+        if self.plugins_dir.is_dir():
+            for child in self.plugins_dir.iterdir():
+                if child.is_dir() and not child.name.startswith("."):
+                    live_names.add(child.name)
+        for stale in set(self._manifest_cache) - live_names:
+            self._manifest_cache.pop(stale, None)
 
         rebuilt: dict[str, PluginRecord] = {}
         for pid, manifest in found.items():
@@ -146,6 +191,7 @@ class Kernel:
                 rebuilt[pid] = old
         self.records = rebuilt
         self.enabled &= set(found)
+        self._invalidate_caches()
         return found
 
     def bootstrap(self) -> None:
@@ -176,7 +222,16 @@ class Kernel:
     # 分类索引（纯通用，内核不认识任何具体分类 ID）
     # ==================================================================
     def categories(self, enabled_only: bool = False) -> tuple[Category, ...]:
-        """聚合插件清单中自报的分类，按 order / id 排序。"""
+        """聚合插件清单中自报的分类，按 order / id 排序。
+
+        带缓存：分类只取决于「记录集合 + 各插件清单」，两者不变时结果不变。
+        enable/disable/uninstall/install 都会 invalidate 缓存，保证正确性。
+        """
+        key = (enabled_only, tuple(sorted(self.records)),
+               tuple(sorted(self.enabled)))
+        if self._categories_key == key and self._categories_cache is not None:
+            return self._categories_cache[1] if enabled_only else self._categories_cache[0]
+
         scope = self.enabled if enabled_only else set(self.records)
         merged: dict[str, Category] = {}
         for pid in sorted(scope):
@@ -184,7 +239,14 @@ class Kernel:
             current = merged.get(category.id)
             if current is None or (category.order, category.label) < (current.order, current.label):
                 merged[category.id] = category
-        return tuple(sorted(merged.values(), key=lambda c: (c.order, c.id)))
+        all_categories = tuple(sorted(merged.values(), key=lambda c: (c.order, c.id)))
+        enabled_categories = tuple(
+            c for c in all_categories
+            if any(self.records[p].manifest.category.id == c.id for p in self.enabled)
+        )
+        self._categories_cache = (all_categories, enabled_categories)
+        self._categories_key = key
+        return self._categories_cache[1] if enabled_only else self._categories_cache[0]
 
     def plugins_by_category(self, category_id: str) -> tuple[str, ...]:
         return tuple(
@@ -309,6 +371,7 @@ class Kernel:
                 desired.discard(pid)
 
         self.enabled = set(desired) & set(order)
+        self._invalidate_caches()
         self._save_state()
         self._notify()
 

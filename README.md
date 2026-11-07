@@ -194,7 +194,7 @@ PluginShellWin/
 ```json
 {
   "app": "PluginShellWin",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "protocol": "1.0",
   "host": ".NET 8.0.33 / WinForms",
   "runtime": { "qt": "6.12.0", "python": "3.13.14", "pid": 18400 },
