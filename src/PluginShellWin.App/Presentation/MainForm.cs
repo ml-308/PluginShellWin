@@ -59,41 +59,37 @@ public sealed class MainForm : Form
     }
 
     // ------------------------------------------------------------------
+    // 用 TableLayoutPanel 三列布局，彻底避免 SplitContainer.SplitterDistance
+    // 在窗口尚未完成布局时越界抛异常（这是"打不开"的根因）。
     private void BuildLayout()
     {
-        var split = new SplitContainer
+        var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            FixedPanel = FixedPanel.Panel1,
-            SplitterWidth = 1,
+            ColumnCount = 3,
+            RowCount = 1,
             BackColor = WorkBuddyTheme.Border,
         };
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, WorkBuddyTheme.SidebarWidth));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, WorkBuddyTheme.ResultPanelWidth));
 
-        split.Panel1.Controls.Add(_nav);
-        split.Panel1MinSize = WorkBuddyTheme.SidebarWidth;
-        split.SplitterDistance = WorkBuddyTheme.SidebarWidth;
-
-        var rightSplit = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            FixedPanel = FixedPanel.Panel2,
-            SplitterWidth = 1,
-            BackColor = WorkBuddyTheme.Border,
-        };
         var contentWrap = new Panel { Dock = DockStyle.Fill };
         contentWrap.Controls.Add(_content);
         contentWrap.Controls.Add(_emptyState);
-        rightSplit.Panel1.Controls.Add(contentWrap);
-        rightSplit.Panel2.Controls.Add(_resultTabs);
-        rightSplit.Panel2MinSize = WorkBuddyTheme.ResultPanelWidth;
-        rightSplit.SplitterDistance = rightSplit.Width - WorkBuddyTheme.ResultPanelWidth;
-        split.Panel2.Controls.Add(rightSplit);
+
+        var sidebarWrap = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
+        sidebarWrap.Controls.Add(_nav);
+
+        layout.Controls.Add(sidebarWrap, 0, 0);
+        layout.Controls.Add(contentWrap, 1, 0);
+        layout.Controls.Add(_resultTabs, 2, 0);
 
         var toolbar = BuildToolbar();
         var status = new StatusStrip { BackColor = WorkBuddyTheme.ContentBackground };
         status.Items.Add(_statusLabel);
 
-        Controls.Add(split);
+        Controls.Add(layout);
         Controls.Add(toolbar);
         Controls.Add(status);
     }
