@@ -13,3 +13,6 @@ runtime/build/
 runtime/dist/
 runtime/**/__pycache__/
 runtime/.tmp/
+
+# 安装器构建中间产物
+installer/_build/

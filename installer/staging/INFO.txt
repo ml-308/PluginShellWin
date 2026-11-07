@@ -1,0 +1,38 @@
+PluginShellWin 1.0.0 - C# Native Plugin Host
+==============================================
+
+This installer sets up the C# (.NET 8 / WinForms) host together with its
+Python plugin runtime. No Web technology is used anywhere.
+
+WHAT GETS INSTALLED
+-------------------
+  * PluginShellWin.exe        main window (self-contained, no .NET install needed)
+  * runtime\PluginRuntime.exe plugin runtime (Python 3.13 + PySide6, bundled)
+  * config\appsettings.json   default configuration
+  * plugins\                  plugin directory (empty -> empty shell on first run)
+  * README.md, LICENSE, INSTALL-CN.txt
+
+The app starts as an EMPTY SHELL: until you install a plugin it only shows
+"Please install a plugin" and the plugin manager entry. All content comes
+from plugins.
+
+WIZARD OPTIONS
+--------------
+  * License Agreement  - MIT (must accept)
+  * Destination folder - change the install path (default: %LOCALAPPDATA%\PluginShellWin)
+  * Additional tasks   - desktop shortcut / Start Menu shortcut (both checked)
+                         optional "install sample plugins" (unchecked)
+  * Final page         - optional "launch after installation"
+
+Unattended equivalents: /DIR="..." /TASKS="desktopicon,startmenuicon"
+  /NOICONS  /VERYSILENT  /LOG="install.log"
+
+REQUIREMENTS
+------------
+  * Windows 10 / 11 (x64)
+  * Nothing else - .NET and Python are both bundled.
+
+PLUGIN COMPATIBILITY
+--------------------
+Plugins use the PluginShell protocol 1.0 (folder + manifest.json + plugin.py).
+The same plugin folder works in the Python version and in this host, unchanged.

@@ -1,0 +1,44 @@
+PluginShellWin 1.0.0 安装说明
+==============================
+
+【这个安装包做了什么】
+安装 C#（.NET 8 / WinForms）宿主，以及它配套的 Python 插件运行时。
+不需要另外安装 .NET，也不需要另外安装 Python。
+
+安装内容：
+  PluginShellWin.exe          主程序（自包含单文件）
+  runtime\PluginRuntime.exe   插件运行时（Python 3.13 + PySide6）
+  config\appsettings.json     默认配置
+  plugins\                    插件目录（空 → 首次启动是空壳）
+  README.md / LICENSE / 本说明
+
+【安装选项】
+1. 许可协议：MIT，需接受后继续。
+2. 选择目标位置：默认 %LOCALAPPDATA%\PluginShellWin，可手动输入或 Browse 修改；
+   「准备安装」页会再次显示你选的路径。
+3. 选择附加任务（默认勾选前两项）：
+   - 创建桌面快捷方式
+   - 创建「开始」菜单快捷方式
+   - （可选，默认不勾选）安装示例插件：把 lesson / tool / lab 三个示例插件装进 plugins\，
+     方便安装后立刻看到效果。不勾选则保持空壳。
+4. 完成页：可选「安装后启动 PluginShellWin」，默认不勾选。
+
+静默安装等价参数：
+  setup.exe /VERYSILENT /DIR="D:\Apps\PluginShellWin"
+  /TASKS="desktopicon,startmenuicon,sampleplugins"   只装指定任务
+  /NOICONS                                           完全不建快捷方式
+  /LOG="install.log"                                 写安装日志
+
+【首次启动】
+未安装任何插件时，窗口只显示「请安装插件」与「插件管理…」入口 —— 这是预期状态。
+插件可以是：
+  * 本机 py 版（PluginShell）已安装的插件：只要 %LOCALAPPDATA%\PluginShell\plugins 里有插件，
+    本程序会自动复用；
+  * 任意「文件夹 + manifest.json」形式的插件，通过「插件管理… → 安装文件夹…」安装。
+
+【卸载】
+设置 → 应用 → 已安装的应用 → PluginShellWin → 卸载。
+卸载只删除安装目录与快捷方式；如果你在 plugins\ 里放了自己的插件，请先自行备份。
+
+【许可】
+MIT License，Copyright (c) 2026 ml-308。
