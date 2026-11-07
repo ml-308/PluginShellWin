@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>PluginShellWin</AssemblyName>
+    <RootNamespace>PluginShellWin.App</RootNamespace>
+    <Version>1.0.0</Version>
+    <Company>ml-308</Company>
+    <Product>PluginShellWin</Product>
+    <AssemblyTitle>PluginShellWin - native C# plugin host</AssemblyTitle>
+    <ApplicationIcon>..\..\assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- DPI 交给 WinForms 运行时配置，manifest 里不再重复声明 -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PluginShellWin.Core\PluginShellWin.Core.csproj" />
+    <ProjectReference Include="..\PluginShellWin.Infrastructure\PluginShellWin.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="config\appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

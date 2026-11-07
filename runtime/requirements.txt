@@ -1,0 +1,6 @@
+# 插件运行时的运行依赖：只用 Qt Essentials（QtCore/QtGui/QtWidgets），
+# 刻意不引入 QtWebEngine —— 全项目不使用 Web 技术。
+PySide6-Essentials>=6.8
+
+# 打包 PluginRuntime.exe 时需要
+pyinstaller>=6.11

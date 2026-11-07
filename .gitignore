@@ -1,0 +1,15 @@
+# .NET 构建产物
+bin/
+obj/
+*.user
+*.suo
+
+# 本地产物与临时目录（exe 走 Release 分发，不入库）
+dist/
+.tmp/
+
+# Python 运行时构建产物
+runtime/build/
+runtime/dist/
+runtime/**/__pycache__/
+runtime/.tmp/
