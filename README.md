@@ -99,20 +99,20 @@ dotnet run --project tests/PluginShellWin.Tests -c Release
 tests/PluginShellWin.Tests/bin/Release/net8.0/PluginShellWin.Tests.exe
 ```
 
-### 3.4 原生安装包 setup.exe
+### 3.4 原生安装包 PluginShellWin-Setup-1.1.0.exe
 
 ```bash
 winget install --id JRSoftware.InnoSetup --silent   # 仅首次需要
-python installer/build_installer.py                # → dist/setup.exe（含推荐名副本）
+python installer/build_installer.py                # → dist/PluginShellWin-Setup-1.1.0.exe
 ```
 
-安装向导提供的选项：
+安装向导页面固定为：**欢迎 → 许可协议 → 安装位置 → 附加任务 → 准备安装 → 安装进度 → 完成**
+（界面简体中文，系统语言非中文时自动 English），与项目内其它应用统一。
 
 | 页面 | 选项 |
 | --- | --- |
 | License Agreement | MIT（必须接受） |
-| 说明页 | 装了什么、空壳语义、静默参数 |
-| **Select Destination Location** | **可修改安装目录**（默认 `%LOCALAPPDATA%\PluginShellWin`，支持 Browse，"准备安装"页复查路径） |
+| **Select Destination Location** | **可修改安装目录**（默认 `%LOCALAPPDATA%\Programs\PluginShellWin`，支持 Browse，"准备安装"页复查路径） |
 | **Select Additional Tasks** | ☑ 桌面快捷方式 · ☑ 开始菜单快捷方式（默认勾选）<br>☐ **安装示例插件**（lesson / tool / lab，默认不勾选，保持空壳） |
 | Completing | ☐ 安装后启动 |
 | 卸载 | 注册标准卸载项，设置 → 应用 → 已安装的应用 → PluginShellWin |
@@ -120,18 +120,15 @@ python installer/build_installer.py                # → dist/setup.exe（含推
 静默安装等价参数：
 
 ```bat
-setup.exe /VERYSILENT /DIR="D:\Apps\PluginShellWin" ^
-          /TASKS="desktopicon,startmenuicon,sampleplugins"
-setup.exe /VERYSILENT /NOICONS /DIR="D:\ps"     :: 完全不要快捷方式
+PluginShellWin-Setup-1.1.0.exe /VERYSILENT /DIR="D:\Apps\PluginShellWin" ^
+          /TASKS="desktopicon,startmenuicon,samples"
+PluginShellWin-Setup-1.1.0.exe /VERYSILENT /NOICONS /DIR="D:\ps"     :: 完全不要快捷方式
 ```
 
 - `/DIR=` 覆盖安装位置；`/NOICONS` 跳过全部快捷方式；
-- `/TASKS=` 只选中列出的任务，`/MERGETASKS=` 在默认基础上追加；
+- `/TASKS=` 只选中列出的任务（示例插件任务名为 `samples`），`/MERGETASKS=` 在默认基础上追加；
 - `/VERYSILENT` 自动接受许可、跳过完成页启动；
 - `/LOG="install.log"` 写安装日志。
-
-> `setup.exe` 这个文件名会被 Windows 应用兼容层 shim（Inno Setup 会给出警告），
-> 因此同时产出同内容副本 `PluginShellWin-1.0.0-setup.exe`，对外分发建议用它。
 
 ---
 
@@ -157,9 +154,12 @@ PluginShellWin/
 │   ├── kernel/  sdk/                   与 PluginShell 同一份微内核与协议
 │   └── build_runtime.py                PyInstaller 打包 + 协议探针
 ├── installer/                          Inno Setup 6 安装包
-│   ├── setup.iss.template              脚本模板（路径由构建脚本注入）
-│   ├── build_installer.py              构建 setup.exe + 推荐名副本
-│   └── staging/                        说明页与中文安装说明
+│   ├── setup.iss                       应用身份与文件清单（含示例插件任务）
+│   ├── common.iss                      统一向导：页面顺序、任务项、文案、卸载行为
+│   ├── ChineseSimplified.isl           简体中文语言包
+│   ├── assets/wizard-small.png         向导头图（由 app.ico 生成）
+│   ├── build_installer.py              构建 dist/PluginShellWin-Setup-1.1.0.exe
+│   └── staging/                        中文安装说明
 ├── tests/PluginShellWin.Tests/         零依赖测试运行器（8 项）
 ├── assets/app.ico                      应用图标
 └── dist/                               发布产物（不入库）
