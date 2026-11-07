@@ -243,6 +243,12 @@ PluginShellWin/
 - **单实例**：命名互斥体 `Local\PluginShellWin.instance`，第二个实例会提示已在运行。
 - **配置/日志位置**：默认 `%LOCALAPPDATA%\PluginShellWin`，可用 `PLUGINSHELLWIN_DATA_DIR` 覆盖；
   只读环境下自动回退到 exe 同级或临时目录。
+- **插件目录解析与只读安装目录**：按
+  `--plugins` → `PLUGINSHELL_PLUGINS` → 配置 `pluginsDir` → `exe\plugins`（可写）→
+  py 版目录 → 数据目录 → 临时目录 依次尝试。**如果程序被装到 `C:\Program Files`
+  这类普通用户不可写的位置，会自动回退到 `%LOCALAPPDATA%\PluginShellWin\plugins`**，
+  界面状态栏与自检报告的 `pluginsSource` 会注明「已回退」，不会再出现"无法创建文件夹"。
+  显式指定的目录若不可写，会给出明确错误并提示改用哪个参数。
 
 ---
 

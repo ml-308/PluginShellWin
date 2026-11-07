@@ -74,3 +74,28 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppName}.exe"; WorkingDir: 
 
 [Run]
 Filename: "{app}\{#AppName}.exe"; Description: "Launch {#AppName}"; Flags: postinstall nowait skipifsilent unchecked
+
+[Code]
+{ 目录创建失败时给出明确原因，而不是让安装到一半才报错。 }
+function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  Target: String;
+begin
+  Result := True;
+  if CurPageID <> wpSelectDir then
+    Exit;
+
+  Target := WizardDirValue;
+  if DirExists(Target) then
+    Exit;
+
+  if not ForceDirectories(Target) then
+  begin
+    MsgBox('无法创建安装目录：' + Target + #13#10#13#10 +
+           '常见原因：该位置需要管理员权限（例如 C:\Program Files），或磁盘只读、' +
+           '被安全软件拦截。' + #13#10 +
+           '建议改到用户目录（如「文档」下），或以管理员身份重新运行安装程序。',
+           mbError, MB_OK);
+    Result := False;
+  end;
+end;

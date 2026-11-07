@@ -44,7 +44,20 @@ public sealed class RuntimeProcess : IPluginRuntime
     public static RuntimeProcess Start(
         RuntimeLaunch launch, string pluginsDirectory, AppLogger? logger = null)
     {
-        Directory.CreateDirectory(pluginsDirectory);
+        // 安装目录可能是只读的：这里必须给出明确错误，而不是抛原始的 OSError
+        try
+        {
+            if (!Directory.Exists(pluginsDirectory))
+            {
+                Directory.CreateDirectory(pluginsDirectory);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new PluginRuntimeException(
+                $"无法创建插件目录：{pluginsDirectory}{Environment.NewLine}" +
+                "请用 --plugins 指定一个可写目录，或把程序安装到用户目录。", ex);
+        }
 
         var startInfo = new ProcessStartInfo(launch.FileName)
         {

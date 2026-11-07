@@ -25,6 +25,15 @@ if str(HERE) not in sys.path:
 PROTOCOL = "1.0"
 APP_TITLE = "PluginShellWin"
 
+# 协议流与诊断流一律固定 UTF-8：宿主(.NET) 按 UTF-8 解码，若跟随系统代码页(GBK)
+# 中文消息会变成乱码，跨语言边界必须显式约定。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        if _stream is not None:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:  # noqa: BLE001
+        pass
+
 
 def log(message: str) -> None:
     """运行时诊断信息只能写 stderr —— stdout 是协议流。"""
@@ -309,7 +318,11 @@ def main(argv: list[str]) -> int:
         index += 1
     if plugins_dir is None:
         plugins_dir = HERE / "plugins"
-    plugins_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        plugins_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        log(f"无法创建插件目录 {plugins_dir}: {exc}")
+        return 2
     return RuntimeServer(plugins_dir).serve()
 
 

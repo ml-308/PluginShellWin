@@ -56,12 +56,19 @@ class Kernel:
         self.plugins_dir = Path(plugins_dir).resolve()
         self.project_root = (Path(project_root) if project_root else self.plugins_dir.parent).resolve()
         self.state_path = Path(state_path).resolve() if state_path else None
-        self.plugins_dir.mkdir(parents=True, exist_ok=True)
-        if str(self.project_root) not in sys.path:
-            sys.path.insert(0, str(self.project_root))
 
+        # 日志句柄必须先就绪，后面的失败分支才可能记日志
         self.logs: list[str] = []
         self._log_sink = log_sink
+
+        # 安装目录可能是只读的（管理员装到 Program Files、普通账户运行）。
+        # 建不出来不能直接崩：discover() 会跳过不存在的目录，宿主持有明确错误提示。
+        try:
+            self.plugins_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            self._log(f"插件目录不可创建（将按空目录处理）: {self.plugins_dir} ({exc})")
+        if str(self.project_root) not in sys.path:
+            sys.path.insert(0, str(self.project_root))
         self.bus = EventBus(error_sink=self._log)
         self.services = ServiceContainer()
         self.extensions = ExtensionRegistry(error_sink=self._log)

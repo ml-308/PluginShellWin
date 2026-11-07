@@ -17,6 +17,15 @@ internal static class Program
     private static async Task<int> Main()
     {
         Environment.SetEnvironmentVariable("QT_QPA_PLATFORM", "offscreen");
+
+        // 插件运行时是 PyInstaller 单文件，需要在 TEMP 下解包。
+        // 受限环境（沙箱/服务账户）默认 TEMP 不可创建子目录，这里统一指到工作区。
+        var repository = FindRepositoryRoot() ?? AppContext.BaseDirectory;
+        var runtimeTemp = Path.Combine(repository, ".tmp", "pyi-runtime");
+        Directory.CreateDirectory(runtimeTemp);
+        Environment.SetEnvironmentVariable("TEMP", runtimeTemp);
+        Environment.SetEnvironmentVariable("TMP", runtimeTemp);
+
         try
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -33,6 +42,8 @@ internal static class Program
         await Run("Config: 窗口尺寸校验", ConfigRejectsTinyWindow);
         await Run("Paths: 识别含插件的目录", PathsDetectPlugins);
         await Run("Paths: --plugins 覆盖优先", PathsExplicitOverride);
+        await Run("Paths: 不可写目录给出明确错误", PathsInvalidOverride);
+        await Run("Paths: 可写性探测", PathsWritabilityProbe);
         await Run("Service: 命令失败返回结果而非抛异常", ServiceReturnsResults);
         await Run("Service: 列表异常翻译为 PluginRuntimeException", ServiceTranslatesErrors);
         await Run("Runtime: 协议握手与插件装载（集成）", RuntimeIntegrationAsync);
@@ -118,6 +129,33 @@ internal static class Program
             Path.Combine(temp.Path, "custom"), new AppConfig());
         Assert(directory == Path.GetFullPath(Path.Combine(temp.Path, "custom")), "--plugins 应优先");
         Assert(source.Contains("--plugins"), "来源应标注为参数");
+    }
+
+    private static void PathsInvalidOverride()
+    {
+        using var temp = new TempDirectory();
+        // 用一个"文件"当父目录，保证 CreateDirectory 必然失败
+        var blocker = Path.Combine(temp.Path, "blocker.bin");
+        File.WriteAllText(blocker, "x");
+        var paths = new AppPaths(Path.Combine(temp.Path, "exe"), Path.Combine(temp.Path, "data"));
+
+        try
+        {
+            paths.ResolvePluginsDirectory(Path.Combine(blocker, "plugins"), new AppConfig());
+            throw new Exception("不可写目录应抛 ConfigurationException");
+        }
+        catch (ConfigurationException ex)
+        {
+            Assert(ex.Message.Contains("不可写"), "错误信息应说明目录不可写");
+            Assert(ex.Message.Contains("--plugins") || ex.Message.Contains("参数"), "应提示如何指定目录");
+        }
+    }
+
+    private static void PathsWritabilityProbe()
+    {
+        using var temp = new TempDirectory();
+        Assert(AppPaths.IsWritable(temp.Path), "临时目录应可写");
+        Assert(!AppPaths.IsWritable(Path.Combine(temp.Path, "missing")), "不存在的目录应判定不可写");
     }
 
     private static async Task ServiceReturnsResults()
