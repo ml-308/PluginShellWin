@@ -198,6 +198,11 @@ public sealed class MainForm : Form
             });
             return Task.CompletedTask;
         });
+        AddToolbarButton(toolbar, "检查更新", () =>
+        {
+            UpdateKit.UpdatePrompt.CheckNow(this);
+            return Task.CompletedTask;
+        });
         AddToolbarButton(toolbar, "关于", () =>
         {
             using var dialog = new AboutForm(_service.PluginsDirectory, _pluginsSource, _runtimeDescription);

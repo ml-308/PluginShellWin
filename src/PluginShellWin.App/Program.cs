@@ -14,6 +14,11 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        // 「发现新版本」检查：命令行开关 + 无人值守 probe
+        UpdateKit.UpdateCheck.Configure(args);
+        var probeExit = UpdateKit.UpdateCheck.TryProbe(args);
+        if (probeExit.HasValue) return probeExit.Value;
+
         CommandLineOptions options;
         try
         {
@@ -117,7 +122,9 @@ internal static class Program
 
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new MainForm(service, pluginsSource, config, logger, launch.Description));
+        var mainForm = new MainForm(service, pluginsSource, config, logger, launch.Description);
+        UpdateKit.UpdatePrompt.ScheduleAutoCheck(mainForm);
+        Application.Run(mainForm);
         return 0;
     }
 

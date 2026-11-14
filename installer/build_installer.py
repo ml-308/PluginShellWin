@@ -1,4 +1,4 @@
-"""构建原生安装程序 dist/PluginShellWin-Setup-1.1.0.exe（Inno Setup 6，统一套件）。
+"""构建原生安装程序 dist/PluginShellWin-Setup-1.2.0.exe（Inno Setup 6，统一套件）。
 
     python installer/build_installer.py
 
@@ -61,7 +61,7 @@ def build() -> Path:
     out = (result.stdout + result.stderr).strip()
     if out:
         print(out[-3000:])
-    exe = OUT / "PluginShellWin-Setup-1.1.0.exe"
+    exe = OUT / "PluginShellWin-Setup-1.2.0.exe"
     if result.returncode != 0 or not exe.is_file():
         raise SystemExit(f"ISCC 失败 rc={result.returncode}")
     print(f"\nSETUP_EXE   {exe}  {exe.stat().st_size:,} bytes "

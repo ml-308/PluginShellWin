@@ -99,11 +99,11 @@ dotnet run --project tests/PluginShellWin.Tests -c Release
 tests/PluginShellWin.Tests/bin/Release/net8.0/PluginShellWin.Tests.exe
 ```
 
-### 3.4 原生安装包 PluginShellWin-Setup-1.1.0.exe
+### 3.4 原生安装包 PluginShellWin-Setup-1.2.0.exe
 
 ```bash
 winget install --id JRSoftware.InnoSetup --silent   # 仅首次需要
-python installer/build_installer.py                # → dist/PluginShellWin-Setup-1.1.0.exe
+python installer/build_installer.py                # → dist/PluginShellWin-Setup-1.2.0.exe
 ```
 
 安装向导页面固定为：**欢迎 → 许可协议 → 安装位置 → 附加任务 → 准备安装 → 安装进度 → 完成**
@@ -120,9 +120,9 @@ python installer/build_installer.py                # → dist/PluginShellWin-Set
 静默安装等价参数：
 
 ```bat
-PluginShellWin-Setup-1.1.0.exe /VERYSILENT /DIR="D:\Apps\PluginShellWin" ^
+PluginShellWin-Setup-1.2.0.exe /VERYSILENT /DIR="D:\Apps\PluginShellWin" ^
           /TASKS="desktopicon,startmenuicon,samples"
-PluginShellWin-Setup-1.1.0.exe /VERYSILENT /NOICONS /DIR="D:\ps"     :: 完全不要快捷方式
+PluginShellWin-Setup-1.2.0.exe /VERYSILENT /NOICONS /DIR="D:\ps"     :: 完全不要快捷方式
 ```
 
 - `/DIR=` 覆盖安装位置；`/NOICONS` 跳过全部快捷方式；
@@ -158,7 +158,7 @@ PluginShellWin/
 │   ├── common.iss                      统一向导：页面顺序、任务项、文案、卸载行为
 │   ├── ChineseSimplified.isl           简体中文语言包
 │   ├── assets/wizard-small.png         向导头图（由 app.ico 生成）
-│   ├── build_installer.py              构建 dist/PluginShellWin-Setup-1.1.0.exe
+│   ├── build_installer.py              构建 dist/PluginShellWin-Setup-1.2.0.exe
 │   └── staging/                        中文安装说明
 ├── tests/PluginShellWin.Tests/         零依赖测试运行器（8 项）
 ├── assets/app.ico                      应用图标

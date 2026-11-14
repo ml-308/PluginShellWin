@@ -1,6 +1,6 @@
-﻿; PluginShellWin · 安装程序（Inno Setup 6）
+; PluginShellWin · 安装程序（Inno Setup 6）
 ; 页面结构与选项由 common.iss 统一提供；这里只声明应用身份与要安装的文件。
-; 构建：installer\build-setup.cmd   产物：dist\PluginShellWin-Setup-1.1.0.exe
+; 构建：installer\build-setup.cmd   产物：dist\PluginShellWin-Setup-1.2.0.exe
 ;
 ; 前置：先产出 dist\app\PluginShellWin.exe（dotnet publish）与
 ;       runtime\dist\PluginRuntime.exe（python runtime/build_runtime.py）。
@@ -8,7 +8,7 @@
 #define AppName "PluginShellWin"
 #define AppSlug "PluginShellWin"
 #define DirName "PluginShellWin"
-#define AppVersion "1.1.0"
+#define AppVersion "1.2.0"
 #define AppId "{{5C2A9E14-7B3D-4A81-9F62-1D8E4C7B3A55}"
 #define AppExe "PluginShellWin.exe"
 #define AppRepo "PluginShellWin"
